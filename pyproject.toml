@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "pycon-build-2024"
+version = "0.1.0"
+description = ""
+authors = ["Anthony Chu <anthony@anthonychu.ca>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+langchain = "^0.1.16"
+sentence-transformers = "^2.7.0"
+qdrant-client = "^1.9.0"
+pymupdf = "^1.24.2"
+chainlit = "^1.0.506"
+azure-identity = "^1.16.0"
+openai = "^1.25.0"
+langchainhub = "^0.1.15"
+
+[tool.poetry.group.dev.dependencies]
+
+[tool.poetry.group.test.dependencies]
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
