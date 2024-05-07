@@ -16,6 +16,7 @@ chainlit = "^1.0.506"
 azure-identity = "^1.16.0"
 openai = "^1.25.0"
 langchainhub = "^0.1.15"
+langchain-openai = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 

@@ -19,11 +19,14 @@ FROM python:3.12-slim as runtime
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH"
 
+WORKDIR /app
+
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 COPY . .
 
 # download the model
-RUN python embeddings.py
+RUN python embeddings.py && \
+    chmod +x entrypoint.sh
 
-ENTRYPOINT ["python", "indexer_job.py"]
+ENTRYPOINT ["./entrypoint.sh"]

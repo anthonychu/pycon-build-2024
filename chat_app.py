@@ -1,5 +1,5 @@
 import os
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain import hub
 from langchain.agents import AgentExecutor
 import langchain.agents

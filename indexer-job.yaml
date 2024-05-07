@@ -1,0 +1,23 @@
+properties:
+  configuration:
+  template:
+    containers:
+    - args:
+      - indexer_job
+      env:
+      - name: QDRANT_HOST
+        value: qdrantdb
+      - name: QDRANT_PORT
+        value: '6333'
+      image: demomay2024.azurecr.io/chatapp:1.3
+      name: indexer-job
+      resources:
+        cpu: 2.0
+        memory: 4Gi
+      volumeMounts:
+      - mountPath: /app/sample-data
+        volumeName: pdfs
+    volumes:
+    - name: pdfs
+      storageName: demomay2024
+      storageType: AzureFile
