@@ -11,6 +11,8 @@ CHATAPP_NAME=chatapp
 OPENAI_NAME=openai-acapms
 OPENAI_RESOURCE_GROUP_NAME=openai-demo
 STORAGE_ACCOUNT_NAME=demomay2024
+SESSION_POOL_NAME=code-interpreter
+SESSION_POOL_LOCATION=eastasia
 
 az group create --name $RESOURCE_GROUP --location $LOCATION
 
@@ -19,7 +21,7 @@ az containerapp env create --name $ENVIRONMENT_NAME --resource-group $RESOURCE_G
 
 az acr create --name $ACR_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --sku Standard --admin-enabled true
 
-az acr build -r $ACR_NAME -t chatapp:1.3 .
+az acr build -r $ACR_NAME -t chatapp:1.4 .
 
 az storage account create --name $STORAGE_ACCOUNT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --sku Standard_LRS
 
@@ -36,7 +38,7 @@ az containerapp env storage set --name $ENVIRONMENT_NAME --resource-group $RESOU
     --azure-file-account-name $STORAGE_ACCOUNT_NAME --azure-file-share-name $FILE_SHARE_NAME
 
 az containerapp job create --name $JOB_NAME --resource-group $RESOURCE_GROUP \
-    --image $ACR_NAME.azurecr.io/chatapp:1.3 --environment $ENVIRONMENT_NAME \
+    --image $ACR_NAME.azurecr.io/chatapp:1.4 --environment $ENVIRONMENT_NAME \
     --cpu 2 --memory 4 \
     --registry-server $ACR_NAME.azurecr.io \
     --trigger-type manual \
@@ -64,10 +66,10 @@ OPENAI_RESOURCE_ID=`az cognitiveservices account show --name $OPENAI_NAME --reso
 
 
 az containerapp create --name $CHATAPP_NAME --resource-group $RESOURCE_GROUP \
-    --image $ACR_NAME.azurecr.io/chatapp:1.3 --environment $ENVIRONMENT_NAME \
+    --image $ACR_NAME.azurecr.io/chatapp:1.4 --environment $ENVIRONMENT_NAME \
     --cpu 2 --memory 4 \
     --registry-server $ACR_NAME.azurecr.io \
-    --env-vars "QDRANT_HOST=qdrantdb" "QDRANT_PORT=6333" "AZURE_OPENAI_ENDPOINT=https://$OPENAI_NAME.openai.azure.com/" \
+    --env-vars "QDRANT_HOST=qdrantdb" "QDRANT_PORT=6333" "AZURE_OPENAI_ENDPOINT=https://$OPENAI_NAME.openai.azure.com/" "POOL_MANAGEMENT_ENDPOINT=https://eastasia.acasessions.io/subscriptions/30501c6c-81f6-41ac-a388-d29cf43a020d/resourceGroups/demo-may-2024/sessionPools/code-interpreter" \
     --args "chat_app" \
     --ingress external --target-port 8000 --system-assigned \
     --min-replicas 1 --max-replicas 1
@@ -77,4 +79,26 @@ CONTAINER_APP_MI_ID=`az containerapp show --name $CHATAPP_NAME --resource-group 
 # assign "Cognitive Services OpenAI User" role to container app identity
 az role assignment create --role "Cognitive Services OpenAI User" --assignee $CONTAINER_APP_MI_ID --scope $OPENAI_RESOURCE_ID
 
+
+az containerapp sessionpool create \
+    --name $SESSION_POOL_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --location $SESSION_POOL_LOCATION \
+    --container-type PythonLTS \
+    --max-sessions 100 \
+    --cooldown-period 300
+
+POOL_RESOURCE_ID=`az containerapp sessionpool show --name $SESSION_POOL_NAME --resource-group $RESOURCE_GROUP --query id -o tsv`
+
+# give CLI user access to the session pool
+az role assignment create \
+    --role "0fb8eba5-a2bb-4abe-b1c1-49dfad359bb0" \
+    --assignee `az account show --query user.name -o tsv` \
+    --scope $POOL_RESOURCE_ID
+
+# give container app identity access to the session pool
+az role assignment create \
+    --role "0fb8eba5-a2bb-4abe-b1c1-49dfad359bb0" \
+    --assignee $CONTAINER_APP_MI_ID \
+    --scope $POOL_RESOURCE_ID
 ```

@@ -9,6 +9,7 @@ from database import doc_store
 from langchain.tools.retriever import create_retriever_tool
 import chainlit as cl
 import dotenv
+from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
 
 dotenv.load_dotenv()
 
@@ -41,7 +42,11 @@ async def on_chat_start():
         "Searches and returns excerpts from documents that contain useful information.",
     )
 
-    tools = [retriever_tool]
+    code_interpreter_tool = SessionsPythonREPLTool(
+        pool_management_endpoint=os.environ["POOL_MANAGEMENT_ENDPOINT"],
+    )
+
+    tools = [retriever_tool, code_interpreter_tool]
     react_agent = langchain.agents.create_react_agent(
         llm=llm,
         tools=tools,
