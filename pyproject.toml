@@ -18,6 +18,7 @@ openai = "^1.25.0"
 langchainhub = "^0.1.15"
 langchain-openai = "^0.1.4"
 langchain-azure-dynamic-sessions = "^0.1.0rc0"
+torch = "2.2.2"
 
 [tool.poetry.group.dev.dependencies]
 

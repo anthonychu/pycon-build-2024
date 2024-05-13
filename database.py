@@ -1,10 +1,11 @@
 import os
+
 import qdrant_client
 from langchain_community.vectorstores.qdrant import Qdrant
-from embeddings import embeddings
+from qdrant_client.http.models import Distance, VectorParams
 from sentence_transformers import SentenceTransformer
-from qdrant_client.http.models import VectorParams, Distance
 
+from embeddings import embeddings
 
 COLLECTION_NAME = "documents"
 

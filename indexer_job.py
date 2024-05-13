@@ -1,10 +1,11 @@
 import os
 import time
-from langchain_text_splitters import CharacterTextSplitter
-from database import COLLECTION_NAME, doc_store
-from langchain_community.document_loaders.pdf import PyMuPDFLoader
-from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 
+from langchain_community.document_loaders.pdf import PyMuPDFLoader
+from langchain_text_splitters import CharacterTextSplitter
+from qdrant_client.http.models import FieldCondition, Filter, MatchValue
+
+from database import COLLECTION_NAME, doc_store
 
 dir = os.environ.get("PDF_DIR", os.path.join(os.path.dirname(__file__), "sample-data"))
 
