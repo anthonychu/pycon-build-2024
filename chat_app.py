@@ -9,9 +9,11 @@ from langchain import hub
 from langchain.agents import AgentExecutor
 from langchain.tools.retriever import create_retriever_tool
 from langchain_azure_dynamic_sessions import SessionsPythonREPLTool
+from langchain_experimental.tools import PythonREPLTool
 from langchain_openai import AzureChatOpenAI
 
 from database import doc_store
+from prompt import prompt
 
 dotenv.load_dotenv()
 
@@ -48,30 +50,68 @@ async def on_chat_start():
         pool_management_endpoint=os.environ["POOL_MANAGEMENT_ENDPOINT"],
     )
 
-    tools = [retriever_tool, code_interpreter_tool]
+    # code_interpreter_tool = PythonREPLTool()
+
+    tools = [
+        retriever_tool,
+        code_interpreter_tool,
+    ]
+
     react_agent = langchain.agents.create_react_agent(
         llm=llm,
         tools=tools,
-        prompt=hub.pull("hwchase17/react"),
+        # prompt=hub.pull("hwchase17/react"),
+        prompt=prompt,
     )
 
-    react_agent_executor = AgentExecutor(agent=react_agent, tools=tools, verbose=True, handle_parsing_errors=True, return_intermediate_steps=True)
+    react_agent_executor = AgentExecutor(
+        agent=react_agent,
+        tools=tools,
+        verbose=True,
+        handle_parsing_errors=True,
+        return_intermediate_steps=True,
+        max_iterations=10,
+    )
 
     cl.user_session.set("agent", react_agent_executor)
+    cl.user_session.set("repl", code_interpreter_tool)
 
 @cl.on_message
 async def on_message(message: cl.Message):
     agent = cl.user_session.get("agent")
 
+    if message.elements:
+        repl = cl.user_session.get("repl")
+        is_sessions = isinstance(repl, SessionsPythonREPLTool)
+        if is_sessions:
+            repl.upload_file(local_file_path=message.elements[0].path, remote_file_path=message.elements[0].name)
+            cl.user_session.set("latest_file", f"/mnt/data/{message.elements[0].name}")
+        else:
+            cl.user_session.set("latest_file", message.elements[0].path)
+
+    latest_file = cl.user_session.get("latest_file")
+    if latest_file:
+        additional_info = (
+            f"If you need to analyze data, there's a file at `{latest_file}`. "
+            "Execute Python code to read the file and extract the data you need. "
+            "Pandas is available. "
+            "Always start by checking the first few rows to see what the data looks like, "
+            "and then write additional queries to complete the analysis."
+        )
+    else:
+        additional_info = "None"
+
     message_content = message.content
 
     res = await agent.ainvoke(
-        input={"input": message_content},
-        config={"configurable": {"session_id": "---"}},
+        input={
+            "input": message_content,
+            "chat_history": [],
+            "additional_info": additional_info,
+        },
     )
 
     async with cl.Step(name="AgentExecutor") as step:
         step.output = '\n'.join([a[0].log for a in res['intermediate_steps']])
 
     await cl.Message(content=res['output']).send()
-
