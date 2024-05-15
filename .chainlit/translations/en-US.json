@@ -204,7 +204,7 @@
                 }
             },
             "header": {
-                "chat": "Chat",
+                "chat": "Contoso Employee Chatbot",
                 "readme": "Readme"
             }
         }
